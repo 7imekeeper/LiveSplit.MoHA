@@ -22,6 +22,6 @@ namespace LiveSplit.MoHA
         public string UpdateName => this.ComponentName;
 		public string UpdateURL => "";
         public Version Version => Assembly.GetExecutingAssembly().GetName().Version;
-		public string XMLURL => this.UpdateURL; //+ "Components/update.LiveSplit.Dishonored.xml";
+		public string XMLURL => this.UpdateURL;
     }
 }
