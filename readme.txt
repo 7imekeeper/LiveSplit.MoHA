@@ -5,12 +5,11 @@ Features:
 
 	Frame-accurate load time removal.
 
-	Automatic reset, start, and split. Automatic splitting can be done on
-	mission end screens as well as at a few other common places.
+	Automatic reset, start, and split.
 
 Requirements:
 
-	Medal of Honor (PC)
+	Medal of Honor: Airborne (PC)
 	LiveSplit 1.6+
 
 Install:
