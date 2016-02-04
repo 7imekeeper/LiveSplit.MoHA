@@ -20,8 +20,8 @@ namespace LiveSplit.MoHA
         }
 
         public string UpdateName => this.ComponentName;
-		public string UpdateURL => "";
+		public string UpdateURL => "https://raw.githubusercontent.com/7imekeeper/LiveSplit.MoHA/master/";
         public Version Version => Assembly.GetExecutingAssembly().GetName().Version;
-		public string XMLURL => this.UpdateURL;
+		public string XMLURL => this.UpdateURL + "Components/update.LiveSplit.MoHA.xml";
     }
 }
