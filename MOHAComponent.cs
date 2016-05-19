@@ -18,6 +18,8 @@ namespace LiveSplit.MoHA
         private GameMemory _gameMemory;
         private Timer _updateTimer;
 
+		bool startOnLoadFinish = false;
+
         public MOHAComponent(LiveSplitState state)
         {
 #if DEBUG
@@ -36,8 +38,9 @@ namespace LiveSplit.MoHA
             _gameMemory.OnFadeIn += gameMemory_OnFadeIn;
             _gameMemory.OnLoadStarted += gameMemory_OnLoadStarted;
             _gameMemory.OnLoadFinished += gameMemory_OnLoadFinished;
-            _gameMemory.OnPlayerLostControl += gameMemory_OnPlayerLostControl;
+            _gameMemory.OnLastTrigger += gameMemory_OnLastTrigger;
 			_gameMemory.OnLevelChanged += gameMemory_OnLevelCompleted;
+			_gameMemory.OnActualLevelStart += gameMemory_OnActualLevelStart;
         }
 
         public override void Dispose()
@@ -61,7 +64,8 @@ namespace LiveSplit.MoHA
         void timer_OnStart(object sender, EventArgs e)
         {
             _timer.InitializeGameTime();
-        }
+			_timer.CurrentState.CurrentTimingMethod = TimingMethod.GameTime;
+		}
 
         public override void Update(IInvalidator invalidator, LiveSplitState state, float width, float height, LayoutMode mode)
         {
@@ -86,9 +90,15 @@ namespace LiveSplit.MoHA
         void gameMemory_OnLoadFinished(object sender, EventArgs e)
         {
             _timer.CurrentState.IsGameTimePaused = false;
+
+			if (startOnLoadFinish)
+			{
+				_timer.Start();
+				startOnLoadFinish = false;
+			}
         }
 
-        void gameMemory_OnPlayerLostControl(object sender, EventArgs e)
+        void gameMemory_OnLastTrigger(object sender, EventArgs e)
         {
 			_timer.Split();
         }
@@ -98,9 +108,15 @@ namespace LiveSplit.MoHA
 			_timer.Split();
         }
 
+		void gameMemory_OnActualLevelStart(object sender, EventArgs e)
+		{
+			startOnLoadFinish = true;
+		}
+
         public override XmlNode GetSettings(XmlDocument document)
         {
-			return null; // return this.Settings.GetSettings(document);
+			return document.CreateElement("Settings");
+			// return this.Settings.GetSettings(document);
         }
 
         public override Control GetSettingsControl(LayoutMode mode)
