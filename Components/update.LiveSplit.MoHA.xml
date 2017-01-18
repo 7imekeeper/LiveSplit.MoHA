@@ -1,8 +1,10 @@
 <updates>
+	<update version="1.0.1.0">
 		<files>
 			<file path="Components/LiveSplit.MoHA.dll" status="changed"/>
 		</files>
 		<changelog>
+			<change>Added setting to split after briefing.</change>
       </changelog>
     </update>
 </updates>
