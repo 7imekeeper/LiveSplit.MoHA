@@ -14,11 +14,13 @@ namespace LiveSplit.MoHA
     {
         public override string ComponentName => "MoHA";
 
+		public MoHASettings Settings { get; set; }
+
         private TimerModel _timer;
         private GameMemory _gameMemory;
         private Timer _updateTimer;
 
-		bool startOnLoadFinish = false;
+		bool splitOnLoadFinish = false;
 
         public MOHAComponent(LiveSplitState state)
         {
@@ -26,6 +28,8 @@ namespace LiveSplit.MoHA
             Debug.Listeners.Clear();
             Debug.Listeners.Add(TimedTraceListener.Instance);
 #endif
+
+			this.Settings = new MoHASettings();
 
             _timer = new TimerModel { CurrentState = state };
             _timer.CurrentState.OnStart += timer_OnStart;
@@ -38,7 +42,8 @@ namespace LiveSplit.MoHA
             _gameMemory.OnFadeIn += gameMemory_OnFadeIn;
             _gameMemory.OnLoadStarted += gameMemory_OnLoadStarted;
             _gameMemory.OnLoadFinished += gameMemory_OnLoadFinished;
-            _gameMemory.OnLastTrigger += gameMemory_OnLastTrigger;
+			//_gameMemory.OnLastTrigger += gameMemory_OnLastTrigger;
+			_gameMemory.OnPlayerLostControl += gameMemory_OnLevelCompleted;
 			_gameMemory.OnLevelChanged += gameMemory_OnLevelCompleted;
 			_gameMemory.OnActualLevelStart += gameMemory_OnActualLevelStart;
         }
@@ -90,18 +95,12 @@ namespace LiveSplit.MoHA
         void gameMemory_OnLoadFinished(object sender, EventArgs e)
         {
             _timer.CurrentState.IsGameTimePaused = false;
-
-			if (startOnLoadFinish)
-			{
-				_timer.Start();
-				startOnLoadFinish = false;
-			}
         }
 
-        void gameMemory_OnLastTrigger(object sender, EventArgs e)
-        {
-			_timer.Split();
-        }
+        //void gameMemory_OnLastTrigger(object sender, EventArgs e)
+        //{
+		//	_timer.Split();
+        //}
 
         void gameMemory_OnLevelCompleted(object sender, EventArgs e)
         {
@@ -110,23 +109,25 @@ namespace LiveSplit.MoHA
 
 		void gameMemory_OnActualLevelStart(object sender, EventArgs e)
 		{
-			startOnLoadFinish = true;
+			if (this.Settings.AutoSplitBriefings)
+				_timer.Split();
+			else
+				_timer.Start();
 		}
 
         public override XmlNode GetSettings(XmlDocument document)
         {
-			return document.CreateElement("Settings");
-			// return this.Settings.GetSettings(document);
+			return this.Settings.GetSettings(document);
         }
 
         public override Control GetSettingsControl(LayoutMode mode)
         {
-			return null; // this.Settings;
+			return this.Settings;
         }
 
         public override void SetSettings(XmlNode settings)
         {
-           // this.Settings.SetSettings(settings);
+           this.Settings.SetSettings(settings);
         }
     }
 

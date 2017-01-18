@@ -34,7 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="LiveSplit.Core">
-      <HintPath>..\..\..\..\Program Files\LiveSplit\LiveSplit.Core.dll</HintPath>
+      <HintPath>..\..\..\..\Users\tjwil\Documents\LiveSplit\LiveSplit.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -44,7 +44,7 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="UpdateManager">
-      <HintPath>..\..\..\..\Program Files\LiveSplit\UpdateManager.dll</HintPath>
+      <HintPath>..\..\..\..\Users\tjwil\Documents\LiveSplit\UpdateManager.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -52,11 +52,22 @@
     <Compile Include="MOHAComponent.cs" />
     <Compile Include="MOHAFactory.cs" />
     <Compile Include="GameMemory.cs" />
+    <Compile Include="MoHASettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="MoHASettings.Designer.cs">
+      <DependentUpon>MoHASettings.cs</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="license.txt" />
     <None Include="readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="MoHASettings.resx">
+      <DependentUpon>MoHASettings.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
