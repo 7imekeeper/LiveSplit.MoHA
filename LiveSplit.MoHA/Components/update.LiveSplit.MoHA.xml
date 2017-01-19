@@ -1,8 +1,8 @@
 <updates>
 	<update version="1.0.1.1">
 		<files>
-			<file path="Components/LiveSplit.MoHA.dll" status="changed"/>
-			<file path="Components/LiveSplit.MoHA.UI.dll" status="added"/>
+			<file path="LiveSplit.MoHA/Components/LiveSplit.MoHA.dll" status="changed"/>
+			<file path="LiveSplit.MoHA/Components/LiveSplit.MoHA.UI.dll" status="added"/>
 		</files>
 		<changelog>
 			<change>
