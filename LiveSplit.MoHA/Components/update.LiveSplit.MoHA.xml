@@ -1,5 +1,5 @@
 <updates>
-	<update version="1.0.1">
+	<update version="1.0.1.1">
 		<files>
 			<file path="LiveSplit.MoHA/Components/LiveSplit.MoHA.dll" status="changed"/>
 			<file path="LiveSplit.MoHA.UI/Components.LiveSplit.MoHA.UI.dll" status="added"/>
