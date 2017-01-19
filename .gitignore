@@ -1,2 +1,8 @@
-obj/
+.vs/
+LiveSplit.MoHA/.vs/
+LiveSplit.MoHA/obj/
+LiveSplit.MoHA/bin/
+LiveSplit.MoHA.UI/.vs/
+LiveSplit.MoHA.UI/obj/
+LiveSplit.MoHA.UI/bin/
 *.pdb

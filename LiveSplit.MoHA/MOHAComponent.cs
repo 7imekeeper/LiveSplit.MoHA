@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Xml;
 using System.Windows.Forms;
+using LiveSplit.MoHA.UI;
 
 namespace LiveSplit.MoHA
 {
@@ -16,11 +17,15 @@ namespace LiveSplit.MoHA
 
 		public MoHASettings Settings { get; set; }
 
+		private MoHAUIComponent UI
+		{
+			get { return _state.Layout.Components.FirstOrDefault(c => c.GetType() == typeof(MoHAUIComponent)) as MoHAUIComponent; }
+		}
+
         private TimerModel _timer;
+		private LiveSplitState _state;
         private GameMemory _gameMemory;
         private Timer _updateTimer;
-
-		bool splitOnLoadFinish = false;
 
         public MOHAComponent(LiveSplitState state)
         {
@@ -28,6 +33,7 @@ namespace LiveSplit.MoHA
             Debug.Listeners.Clear();
             Debug.Listeners.Add(TimedTraceListener.Instance);
 #endif
+			_state = state;
 
 			this.Settings = new MoHASettings();
 
@@ -46,6 +52,7 @@ namespace LiveSplit.MoHA
 			_gameMemory.OnPlayerLostControl += gameMemory_OnLevelCompleted;
 			_gameMemory.OnLevelChanged += gameMemory_OnLevelCompleted;
 			_gameMemory.OnActualLevelStart += gameMemory_OnActualLevelStart;
+			_gameMemory.OnPlayerDeath += gameMemory_OnPlayerDeath;
         }
 
         public override void Dispose()
@@ -113,6 +120,15 @@ namespace LiveSplit.MoHA
 				_timer.Split();
 			else
 				_timer.Start();
+		}
+
+		void gameMemory_OnPlayerDeath(object sender, EventArgs e)
+		{
+			if (_state.CurrentPhase != TimerPhase.NotRunning && _state.CurrentPhase != TimerPhase.Ended)
+			{
+				if (this.UI != null)
+					this.UI.AddDeath();
+			}
 		}
 
         public override XmlNode GetSettings(XmlDocument document)

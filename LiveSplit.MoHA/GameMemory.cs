@@ -13,12 +13,14 @@ namespace LiveSplit.MoHA
 		public StringWatcher CurrentLevel { get; }
 		//public MemoryWatcher<int> EndTrigger { get; }
 		public MemoryWatcher<bool> EndCutscene { get; }
+		public MemoryWatcher<int> LifeState { get; }
 
 		public GameData()
         {
 			this.CurrentLevel = new StringWatcher(new DeepPointer(0x3A4FB8, 0x4), 16);
 			this.EndCutscene = new MemoryWatcher<bool>(new DeepPointer(0xE16EAC, 0x8));
             this.IsLoading = new MemoryWatcher<bool>(new DeepPointer(0xC180, 0x4));
+			this.LifeState = new MemoryWatcher<int>(new DeepPointer(0x13F34, 0x210, 0x14, 0x488, 0x28, 0x790));
 			//this.EndTrigger = new MemoryWatcher<int>(new DeepPointer(0xDAE19C, 0x10, 0x4, 0x7F0));
 
 			this.AddRange(this.GetType().GetProperties()
@@ -38,6 +40,7 @@ namespace LiveSplit.MoHA
         public event EventHandler OnFadeIn;
         //public event EventHandler OnLastTrigger;
 		public event EventHandler OnPlayerLostControl;
+		public event EventHandler OnPlayerDeath;
 
         private List<int> _ignorePIDs;
 
@@ -102,6 +105,12 @@ namespace LiveSplit.MoHA
 			{
 				if (_data.EndCutscene.Current)
 					this.OnPlayerLostControl?.Invoke(this, EventArgs.Empty);
+			}
+
+			if (_data.LifeState.Changed)
+			{
+				if (_data.LifeState.Current == 2)
+					this.OnPlayerDeath?.Invoke(this, EventArgs.Empty);
 			}
 
 			//if (_data.EndTrigger.Changed && _data.CurrentLevel.Current.Contains("Flk"))
