@@ -49,6 +49,7 @@ namespace LiveSplit.MoHA
         private bool _loadingStarted;
 		private DateTime _runStart;
 		private bool _delayedStart;
+		private bool _deathDetected;
 
 
         public GameMemory()
@@ -109,8 +110,13 @@ namespace LiveSplit.MoHA
 
 			if (_data.LifeState.Changed)
 			{
-				if (_data.LifeState.Current == 2)
+				if (_data.LifeState.Current == 1 && _deathDetected)
+					_deathDetected = false;
+				else if (_data.LifeState.Current == 2 && !_deathDetected)
+				{
 					this.OnPlayerDeath?.Invoke(this, EventArgs.Empty);
+					_deathDetected = true;
+				}
 			}
 
 			//if (_data.EndTrigger.Changed && _data.CurrentLevel.Current.Contains("Flk"))
