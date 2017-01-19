@@ -1,0 +1,12 @@
+<updates>
+	<update version="1.0.0">
+		<files>
+			<file path="LiveSplit.MoHA.UI/Components/LiveSplit.MoHA.UI.dll" status="changed"/>
+		</files>
+		<changelog>
+			<change>
+				Implemented death counter.
+			</change>
+		</changelog>
+	</update>
+</updates>
