@@ -4,24 +4,24 @@ using System.Linq;
 using System.Diagnostics;
 using System.Windows.Forms;
 using LiveSplit.ComponentUtil;
+using System.Threading.Tasks;
 
 namespace LiveSplit.MoHA
 {
     class GameData : MemoryWatcherList
     {
         public MemoryWatcher<bool> IsLoading { get; }
-		public StringWatcher CurrentLevel { get; }
-		//public MemoryWatcher<int> EndTrigger { get; }
+		public StringWatcher Level { get; }
 		public MemoryWatcher<bool> EndCutscene { get; }
-		public MemoryWatcher<int> LifeState { get; }
+		public MemoryWatcher<bool> Death { get; }
 
 		public GameData()
         {
-			this.CurrentLevel = new StringWatcher(new DeepPointer(0x3A4FB8, 0x4), 16);
+			this.Level = new StringWatcher(new DeepPointer(0x3A4FB8, 0x4), 16);
 			this.EndCutscene = new MemoryWatcher<bool>(new DeepPointer(0xE16EAC, 0x8));
             this.IsLoading = new MemoryWatcher<bool>(new DeepPointer(0xC180, 0x4));
-			this.LifeState = new MemoryWatcher<int>(new DeepPointer(0x13F34, 0x210, 0x14, 0x488, 0x28, 0x790));
-			//this.EndTrigger = new MemoryWatcher<int>(new DeepPointer(0xDAE19C, 0x10, 0x4, 0x7F0));
+			this.Death = new MemoryWatcher<bool>(new DeepPointer(0xDDE144, 0x10, 0x1CC));
+
 
 			this.AddRange(this.GetType().GetProperties()
                 .Where(p => !p.GetIndexParameters().Any())
@@ -32,34 +32,30 @@ namespace LiveSplit.MoHA
 
     class GameMemory
     {
-		public event EventHandler OnFirstLevelLoaded;
-		public event EventHandler OnLevelChanged;
-		public event EventHandler OnActualLevelStart;
-        public event EventHandler OnLoadStarted;
-        public event EventHandler OnLoadFinished;
-        public event EventHandler OnFadeIn;
-        //public event EventHandler OnLastTrigger;
-		public event EventHandler OnPlayerLostControl;
-		public event EventHandler OnPlayerDeath;
+		public event Action OnFirstLevelLoading;
+		public event Action OnLevelChanged;
+		public event Action OnActualLevelStart;
+        public event Action OnLoadStarted;
+        public event Action OnLoadFinished;
+        public event Action OnFadeIn;
+		public event Action OnPlayerLostControl;
+		public event Action OnPlayerDeath;
 
-        private List<int> _ignorePIDs;
+		private List<int> ignorePIDs;
 
-        private GameData _data;
-        private Process _process;
-        private bool _loadingStarted;
-		private DateTime _runStart;
-		private bool _delayedStart;
-		private bool _deathDetected;
+        private GameData data;
+        private Process process;
 
-
+		private bool freshLoad;
+		
         public GameMemory()
         {
-            _ignorePIDs = new List<int>();
+            ignorePIDs = new List<int>();
         }
 
         public void Update()
         {
-            if (_process == null || _process.HasExited)
+            if (process == null || process.HasExited)
             {
                 if (!this.TryGetGameProcess())
                     return;
@@ -67,94 +63,59 @@ namespace LiveSplit.MoHA
 
 			TimedTraceListener.Instance.UpdateCount++;
 
-            _data.UpdateAll(_process);
+            data.UpdateAll(process);
 
-			if (_data.CurrentLevel.Changed)
+			if (data.Level.Changed)
             {
-				if (_data.CurrentLevel.Current == "Tra_Jmp_P")
-					this.OnFirstLevelLoaded?.Invoke(this, EventArgs.Empty);
-				else if (_data.CurrentLevel.Current.Contains("Briefing"))
-					this.OnLevelChanged?.Invoke(this, EventArgs.Empty);
-				else if (_data.CurrentLevel.Current.Contains("_P") && !_data.CurrentLevel.Current.Contains("MP_"))
-					this.OnActualLevelStart?.Invoke(this, EventArgs.Empty);
+				if (data.Level.Current == "Tra_Jmp_P")
+					this.OnFirstLevelLoading?.Invoke();
+				else if (data.Level.Current.Contains("Briefing"))
+					this.OnLevelChanged?.Invoke();
+				else if (data.Level.Current.Contains("_P") && !data.Level.Current.Contains("MP_") && data.Level.Old != "shell")
+					freshLoad = true;
             }
 
-            if (_data.IsLoading.Changed)
+            if (data.IsLoading.Changed)
             {
-				if (_data.IsLoading.Current)
+				if (data.IsLoading.Current)
 				{
-					_loadingStarted = true;
-					this.OnLoadStarted?.Invoke(this, EventArgs.Empty);
+					this.OnLoadStarted?.Invoke();
 				}
 				else
 				{
-					if (_loadingStarted)
+					this.OnLoadFinished?.Invoke();
+					if (data.Level.Current == "Tra_Jmp_P")
+						Task.Delay(2000).ContinueWith(_ => this.OnFadeIn?.Invoke());
+					else if (data.Level.Current.Contains("_P") && !data.Level.Current.Contains("MP_") && freshLoad)
 					{
-						_loadingStarted = false;
-						this.OnLoadFinished?.Invoke(this, EventArgs.Empty);
-					}
-
-					if (_data.CurrentLevel.Current == "Tra_Jmp_P")
-					{
-						_runStart = DateTime.Now;
-						_delayedStart = true;
+						this.OnActualLevelStart?.Invoke();
+						freshLoad = false;
 					}
 				}
             }
 
-			if (_data.EndCutscene.Changed)
+			if (data.EndCutscene.Changed && data.EndCutscene.Current)
 			{
-				if (_data.EndCutscene.Current)
-					this.OnPlayerLostControl?.Invoke(this, EventArgs.Empty);
+				this.OnPlayerLostControl?.Invoke();
 			}
 
-			if (_data.LifeState.Changed)
+			if (data.Death.Changed && data.Death.Current)
 			{
-				if (_data.LifeState.Current == 1 && _deathDetected)
-					_deathDetected = false;
-				else if (_data.LifeState.Current == 2 && !_deathDetected)
-				{
-					this.OnPlayerDeath?.Invoke(this, EventArgs.Empty);
-					_deathDetected = true;
-				}
-			}
-
-			//if (_data.EndTrigger.Changed && _data.CurrentLevel.Current.Contains("Flk"))
-			//{
-			//	if (_data.EndTrigger.Current == 2)
-			//		this.OnLastTrigger?.Invoke(this, EventArgs.Empty);
-			//}
-
-			if (_delayedStart && DateTime.Now.Subtract(_runStart) >= TimeSpan.FromSeconds(2))
-			{
-				_delayedStart = false;
-				this.OnFadeIn?.Invoke(this, EventArgs.Empty);
+				this.OnPlayerDeath?.Invoke();
 			}
         }
 
         bool TryGetGameProcess()
         {
             Process game = Process.GetProcesses().FirstOrDefault(p => p.ProcessName.ToLower() == "moha"
-                && !p.HasExited && !_ignorePIDs.Contains(p.Id));
+                && !p.HasExited && !ignorePIDs.Contains(p.Id));
             if (game == null)
                 return false;
 
-            _data = new GameData();
-            _process = game;
+            data = new GameData();
+            process = game;
 
             return true;
-        }
-    }
-
-    class FakeMemoryWatcher<T>
-    {
-        public T Current { get; set; }
-        public T Old { get; set; }
-
-        public FakeMemoryWatcher(T old, T current)
-        {
-            this.Old = old;
-            this.Current = current;
         }
     }
 }

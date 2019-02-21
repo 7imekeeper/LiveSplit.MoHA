@@ -19,13 +19,13 @@ namespace LiveSplit.MoHA
 
 		private MoHAUIComponent UI
 		{
-			get { return _state.Layout.Components.FirstOrDefault(c => c.GetType() == typeof(MoHAUIComponent)) as MoHAUIComponent; }
+			get { return state.Layout.Components.FirstOrDefault(c => c.GetType() == typeof(MoHAUIComponent)) as MoHAUIComponent; }
 		}
 
-        private TimerModel _timer;
-		private LiveSplitState _state;
-        private GameMemory _gameMemory;
-        private Timer _updateTimer;
+        private TimerModel timer;
+		private LiveSplitState state;
+        private GameMemory gameMemory;
+        private Timer updateTimer;
 
         public MOHAComponent(LiveSplitState state)
         {
@@ -33,39 +33,38 @@ namespace LiveSplit.MoHA
             Debug.Listeners.Clear();
             Debug.Listeners.Add(TimedTraceListener.Instance);
 #endif
-			_state = state;
+			this.state = state;
 
 			this.Settings = new MoHASettings();
 
-            _timer = new TimerModel { CurrentState = state };
-            _timer.CurrentState.OnStart += timer_OnStart;
+            timer = new TimerModel { CurrentState = this.state };
+            timer.CurrentState.OnStart += timer_OnStart;
 
-            _updateTimer = new Timer() { Interval = 15, Enabled = true };
-            _updateTimer.Tick += updateTimer_Tick;
+            updateTimer = new Timer() { Interval = 15, Enabled = true };
+            updateTimer.Tick += updateTimer_Tick;
 
-            _gameMemory = new GameMemory();
-            _gameMemory.OnFirstLevelLoaded += gameMemory_OnFirstLevelLoading;
-            _gameMemory.OnFadeIn += gameMemory_OnFadeIn;
-            _gameMemory.OnLoadStarted += gameMemory_OnLoadStarted;
-            _gameMemory.OnLoadFinished += gameMemory_OnLoadFinished;
-			//_gameMemory.OnLastTrigger += gameMemory_OnLastTrigger;
-			_gameMemory.OnPlayerLostControl += gameMemory_OnLevelCompleted;
-			_gameMemory.OnLevelChanged += gameMemory_OnLevelCompleted;
-			_gameMemory.OnActualLevelStart += gameMemory_OnActualLevelStart;
-			_gameMemory.OnPlayerDeath += gameMemory_OnPlayerDeath;
+            gameMemory = new GameMemory();
+            gameMemory.OnFirstLevelLoading += gameMemory_OnFirstLevelLoading;
+            gameMemory.OnFadeIn += gameMemory_OnFadeIn;
+            gameMemory.OnLoadStarted += gameMemory_OnLoadStarted;
+            gameMemory.OnLoadFinished += gameMemory_OnLoadFinished;
+			gameMemory.OnPlayerLostControl += gameMemory_OnLevelCompleted;
+			gameMemory.OnLevelChanged += gameMemory_OnLevelCompleted;
+			gameMemory.OnActualLevelStart += gameMemory_OnActualLevelStart;
+			gameMemory.OnPlayerDeath += gameMemory_OnPlayerDeath;
         }
 
-        public override void Dispose()
+		public override void Dispose()
         {
-            _timer.CurrentState.OnStart -= timer_OnStart;
-            _updateTimer?.Dispose();
+            timer.CurrentState.OnStart -= timer_OnStart;
+            updateTimer?.Dispose();
         }
 
         void updateTimer_Tick(object sender, EventArgs eventArgs)
         {
             try
             {
-                _gameMemory.Update();
+                gameMemory.Update();
             }
             catch (Exception ex)
             {
@@ -75,8 +74,8 @@ namespace LiveSplit.MoHA
 
         void timer_OnStart(object sender, EventArgs e)
         {
-            _timer.InitializeGameTime();
-			_timer.CurrentState.CurrentTimingMethod = TimingMethod.GameTime;
+            timer.InitializeGameTime();
+			timer.CurrentState.CurrentTimingMethod = TimingMethod.GameTime;
 		}
 
         public override void Update(IInvalidator invalidator, LiveSplitState state, float width, float height, LayoutMode mode)
@@ -84,54 +83,46 @@ namespace LiveSplit.MoHA
 
         }
 
-        void gameMemory_OnFirstLevelLoading(object sender, EventArgs e)
+        void gameMemory_OnFirstLevelLoading()
         {
-            _timer.Reset();
+            timer.Reset();
         }
 
-        void gameMemory_OnFadeIn(object sender, EventArgs e)
+        void gameMemory_OnFadeIn()
         {
-            _timer.Start();
+            timer.Start();
         }
 
-        void gameMemory_OnLoadStarted(object sender, EventArgs e)
+        void gameMemory_OnLoadStarted()
         {
-            _timer.CurrentState.IsGameTimePaused = true;
+            timer.CurrentState.IsGameTimePaused = true;
         }
 
-        void gameMemory_OnLoadFinished(object sender, EventArgs e)
+        void gameMemory_OnLoadFinished()
         {
-            _timer.CurrentState.IsGameTimePaused = false;
+            timer.CurrentState.IsGameTimePaused = false;
         }
 
-        //void gameMemory_OnLastTrigger(object sender, EventArgs e)
-        //{
-		//	_timer.Split();
-        //}
-
-        void gameMemory_OnLevelCompleted(object sender, EventArgs e)
-        {
-			_timer.Split();
-        }
-
-		void gameMemory_OnActualLevelStart(object sender, EventArgs e)
+		void gameMemory_OnActualLevelStart()
 		{
 			if (this.Settings.AutoSplitBriefings)
-				_timer.Split();
+				timer.Split();
 			else
-				_timer.Start();
+				timer.Start();
 		}
 
-		void gameMemory_OnPlayerDeath(object sender, EventArgs e)
+		void gameMemory_OnLevelCompleted()
 		{
-			if (_state.CurrentPhase != TimerPhase.NotRunning && _state.CurrentPhase != TimerPhase.Ended)
-			{
-				if (this.UI != null)
-					this.UI.AddDeath();
-			}
+			timer.Split();
 		}
 
-        public override XmlNode GetSettings(XmlDocument document)
+		private void gameMemory_OnPlayerDeath()
+		{
+			if (timer.CurrentState.CurrentPhase == TimerPhase.Running)
+				UI?.AddDeath();
+		}
+
+		public override XmlNode GetSettings(XmlDocument document)
         {
 			return this.Settings.GetSettings(document);
         }
