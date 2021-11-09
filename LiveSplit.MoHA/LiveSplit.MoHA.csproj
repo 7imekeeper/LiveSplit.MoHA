@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>LiveSplit.MoHA</RootNamespace>
     <AssemblyName>LiveSplit.MoHA</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -34,7 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="LiveSplit.Core">
-      <HintPath>C:\Program Files\LiveSplit\LiveSplit.Core.dll</HintPath>
+      <HintPath>C:\Programs\LiveSplit\LiveSplit.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -44,13 +44,14 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="UpdateManager">
-      <HintPath>C:\Program Files\LiveSplit\UpdateManager.dll</HintPath>
+      <HintPath>C:\Programs\LiveSplit\UpdateManager.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MOHAComponent.cs" />
-    <Compile Include="MOHAFactory.cs" />
+    <Compile Include="Level.cs" />
+    <Compile Include="MoHAComponent.cs" />
+    <Compile Include="MoHAFactory.cs" />
     <Compile Include="GameMemory.cs" />
     <Compile Include="MoHASettings.cs">
       <SubType>UserControl</SubType>

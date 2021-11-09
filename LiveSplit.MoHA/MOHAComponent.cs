@@ -11,9 +11,9 @@ using LiveSplit.MoHA.UI;
 
 namespace LiveSplit.MoHA
 {
-    class MOHAComponent : LogicComponent
-    {
-        public override string ComponentName => "MoHA";
+	class MoHAComponent : LogicComponent
+	{
+		public override string ComponentName => "MoHA";
 
 		public MoHASettings Settings { get; set; }
 
@@ -22,96 +22,122 @@ namespace LiveSplit.MoHA
 			get { return state.Layout.Components.FirstOrDefault(c => c.GetType() == typeof(MoHAUIComponent)) as MoHAUIComponent; }
 		}
 
-        private TimerModel timer;
+		private TimerModel timer;
 		private LiveSplitState state;
-        private GameMemory gameMemory;
-        private Timer updateTimer;
+		private GameMemory gameMemory;
+		private Timer updateTimer;
 
-        public MOHAComponent(LiveSplitState state)
-        {
+		public MoHAComponent(LiveSplitState state)
+		{
 #if DEBUG
-            Debug.Listeners.Clear();
-            Debug.Listeners.Add(TimedTraceListener.Instance);
+			Debug.Listeners.Clear();
+			Debug.Listeners.Add(TimedTraceListener.Instance);
 #endif
 			this.state = state;
 
 			this.Settings = new MoHASettings();
 
-            timer = new TimerModel { CurrentState = this.state };
-            timer.CurrentState.OnStart += timer_OnStart;
+			timer = new TimerModel { CurrentState = this.state };
+			timer.CurrentState.OnStart += timer_OnStart;
 
-            updateTimer = new Timer() { Interval = 15, Enabled = true };
-            updateTimer.Tick += updateTimer_Tick;
+			updateTimer = new Timer() { Interval = 15, Enabled = true };
+			updateTimer.Tick += updateTimer_Tick;
 
-            gameMemory = new GameMemory();
-            gameMemory.OnFirstLevelLoading += gameMemory_OnFirstLevelLoading;
-            gameMemory.OnFadeIn += gameMemory_OnFadeIn;
-            gameMemory.OnLoadStarted += gameMemory_OnLoadStarted;
-            gameMemory.OnLoadFinished += gameMemory_OnLoadFinished;
-			gameMemory.OnPlayerLostControl += gameMemory_OnLevelCompleted;
+			gameMemory = new GameMemory();
+			gameMemory.OnFirstLevelLoading += gameMemory_OnFirstLevelLoading;
+			gameMemory.OnFadeIn += gameMemory_OnFadeIn;
+			gameMemory.OnLoadStarted += gameMemory_OnLoadStarted;
+			gameMemory.OnLoadFinished += gameMemory_OnLoadFinished;
+			//gameMemory.OnPlayerLostControl += gameMemory_OnLevelCompleted;
 			gameMemory.OnLevelChanged += gameMemory_OnLevelCompleted;
 			gameMemory.OnActualLevelStart += gameMemory_OnActualLevelStart;
+
+			#region Husky
+			gameMemory.OnHuskyLowerOfficerKilled += gameMemory_OnHuskyLowerOfficerKilled;
+			gameMemory.OnHuskyMidOfficerKilled += gameMemory_OnHuskyMidOfficerKilled;
+			#endregion Husky
+
 			gameMemory.OnPlayerDeath += gameMemory_OnPlayerDeath;
-        }
+			gameMemory.OnFinalInput += gameMemory_OnFinalInput;
+		}
 
 		public override void Dispose()
-        {
-            timer.CurrentState.OnStart -= timer_OnStart;
-            updateTimer?.Dispose();
-        }
+		{
+			timer.CurrentState.OnStart -= timer_OnStart;
+			updateTimer?.Dispose();
+		}
 
-        void updateTimer_Tick(object sender, EventArgs eventArgs)
-        {
-            try
-            {
-                gameMemory.Update();
-            }
-            catch (Exception ex)
-            {
-                Trace.WriteLine(ex.ToString());
-            }
-        }
+		void updateTimer_Tick(object sender, EventArgs eventArgs)
+		{
+			try
+			{
+				gameMemory.Update();
+			}
+			catch (Exception ex)
+			{
+				Trace.WriteLine(ex.ToString());
+			}
+		}
 
-        void timer_OnStart(object sender, EventArgs e)
-        {
-            timer.InitializeGameTime();
+		void timer_OnStart(object sender, EventArgs e)
+		{
+			timer.InitializeGameTime();
 			timer.CurrentState.CurrentTimingMethod = TimingMethod.GameTime;
 		}
 
-        public override void Update(IInvalidator invalidator, LiveSplitState state, float width, float height, LayoutMode mode)
-        {
+		public override void Update(IInvalidator invalidator, LiveSplitState state, float width, float height, LayoutMode mode)
+		{
 
-        }
+		}
 
-        void gameMemory_OnFirstLevelLoading()
-        {
-            timer.Reset();
-        }
+		void gameMemory_OnFirstLevelLoading()
+		{
+			timer.Reset();
+		}
 
-        void gameMemory_OnFadeIn()
-        {
-            timer.Start();
-        }
+		void gameMemory_OnFadeIn()
+		{
+			timer.Start();
+		}
 
-        void gameMemory_OnLoadStarted()
-        {
-            timer.CurrentState.IsGameTimePaused = true;
-        }
+		void gameMemory_OnLoadStarted()
+		{
+			timer.CurrentState.IsGameTimePaused = true;
+		}
 
-        void gameMemory_OnLoadFinished()
-        {
-            timer.CurrentState.IsGameTimePaused = false;
-        }
+		void gameMemory_OnLoadFinished()
+		{
+			timer.CurrentState.IsGameTimePaused = false;
+		}
 
 		void gameMemory_OnActualLevelStart()
 		{
-			if (this.Settings.AutoSplitBriefings)
-				timer.Split();
-			else
+			if (timer.CurrentState.CurrentPhase == TimerPhase.NotRunning)
 				timer.Start();
+			else if (this.Settings.AutoSplitBriefings)
+				timer.Split();
 		}
 
 		void gameMemory_OnLevelCompleted()
+		{
+			timer.Split();
+		}
+
+		#region Husky
+		private void gameMemory_OnHuskyLowerOfficerKilled()
+		{
+			if (this.Settings.SplitOnLowerOfficerKilled)
+				timer.Split();
+		}
+
+		private void gameMemory_OnHuskyMidOfficerKilled()
+		{
+			if (this.Settings.SplitOnMidOfficerKilled)
+				timer.Split();
+		}
+		#endregion Husky
+
+		void gameMemory_OnFinalInput()
 		{
 			timer.Split();
 		}
@@ -123,39 +149,39 @@ namespace LiveSplit.MoHA
 		}
 
 		public override XmlNode GetSettings(XmlDocument document)
-        {
+		{
 			return this.Settings.GetSettings(document);
-        }
+		}
 
-        public override Control GetSettingsControl(LayoutMode mode)
-        {
+		public override Control GetSettingsControl(LayoutMode mode)
+		{
 			return this.Settings;
-        }
+		}
 
-        public override void SetSettings(XmlNode settings)
-        {
-           this.Settings.SetSettings(settings);
-        }
-    }
+		public override void SetSettings(XmlNode settings)
+		{
+		   this.Settings.SetSettings(settings);
+		}
+	}
 
-    public class TimedTraceListener : DefaultTraceListener
-    {
-        private static TimedTraceListener _instance;
-        public static TimedTraceListener Instance => _instance ?? (_instance = new TimedTraceListener());
+	public class TimedTraceListener : DefaultTraceListener
+	{
+		private static TimedTraceListener _instance;
+		public static TimedTraceListener Instance => _instance ?? (_instance = new TimedTraceListener());
 
-        private TimedTraceListener() { }
+		private TimedTraceListener() { }
 
-        public int UpdateCount
-        {
-            [MethodImpl(MethodImplOptions.Synchronized)]
-            get;
-            [MethodImpl(MethodImplOptions.Synchronized)]
-            set;
-        }
+		public int UpdateCount
+		{
+			[MethodImpl(MethodImplOptions.Synchronized)]
+			get;
+			[MethodImpl(MethodImplOptions.Synchronized)]
+			set;
+		}
 
-        public override void WriteLine(string message)
-        {
-            base.WriteLine("MoHA: " + this.UpdateCount + " " + message);
-        }
-    }
+		public override void WriteLine(string message)
+		{
+			base.WriteLine("MoHA: " + this.UpdateCount + " " + message);
+		}
+	}
 }

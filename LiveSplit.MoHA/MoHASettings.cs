@@ -15,10 +15,17 @@ namespace LiveSplit.MoHA
 	{
 		public bool AutoSplitBriefings { get; set; }
 
+		#region Husky
+		public bool SplitOnLowerOfficerKilled { get; set; }
+		public bool SplitOnMidOfficerKilled { get; set; }
+		#endregion Husky
+
 		public MoHASettings()
 		{
 			InitializeComponent();
 			this.splitBriefingsCheckBox.DataBindings.Add("Checked", this, "AutoSplitBriefings", false, DataSourceUpdateMode.OnPropertyChanged);
+			this.huskyLowerOfficerKilledCheckBox.DataBindings.Add("Checked", this, "SplitOnLowerOfficerKilled", false, DataSourceUpdateMode.OnPropertyChanged);
+			this.huskyMidOfficerKilledCheckBox.DataBindings.Add("Checked", this, "SplitOnMidOfficerKilled", false, DataSourceUpdateMode.OnPropertyChanged);
 		}
 
 		static XmlElement ToElement<T>(XmlDocument doc, string name, T value)
